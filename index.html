@@ -426,15 +426,13 @@ header {
   font-size: 12px; font-weight: 600; color: var(--c-mute);
 }
 .sri-reason { font-size: 11px; color: var(--c-amber2); }
-.sri-multi-warning {
+.sri-multi-warn {
   display: flex; align-items: center; gap: 6px;
   font-size: 11px; font-weight: 700; color: var(--c-amber2);
-  background: rgba(255,176,32,.08); border: 1px solid rgba(255,176,32,.2);
-  border-radius: 6px; padding: 5px 9px; margin-top: 4px;
+  background: rgba(255,176,32,.08); border: 1px solid rgba(255,176,32,.22);
+  border-radius: 6px; padding: 5px 9px; margin-top: 2px;
 }
-.sri-company-list {
-  display: flex; flex-direction: column; gap: 4px; margin-top: 6px;
-}
+.sri-company-list { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
 .sri-company-row {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 11.5px; padding: 5px 9px; border-radius: 6px;
@@ -1078,7 +1076,7 @@ function processInput(raw) {
         const companies = todayItems.map(d => `${d.company}(${d.box}box)`).join(', ');
         result = { ok:false, warn:false, over:true, item:exact, parsed, time,
           reason: `BOX 초과! 전체 출고 예정 ${totalBox}box (${companies}) / ${cnt}번째 스캔`,
-          todayItems: todayItems.length > 1 ? todayItems : null, totalBox, scanCnt: cnt };
+          totalBox, scanCnt: cnt, todayItems: todayItems.length > 1 ? todayItems : null };
       } else {
         // ✅ 합격 - 여러 업체면 합산 표시
         verifiedUdis.add(exact.udi);
@@ -1141,21 +1139,18 @@ function renderResultList() {
     const company  = r.multiCompany || r.item?.company || '';
     const isMulti  = !!(r.todayItems && r.todayItems.length > 1);
 
-    // 업체별 box 목록 (다업체일 때)
-    const companyListHtml = isMulti
-      ? `<div class="sri-company-list">` +
-        r.todayItems.map(d =>
-          `<div class="sri-company-row">
-            <span class="sri-company-name">🏢 ${d.company}</span>
-            <span class="sri-company-box">${d.qty.toLocaleString()}ea · ${d.box}box</span>
-          </div>`
-        ).join('') +
-        `</div>`
+    const multiWarnHtml = isMulti
+      ? `<div class="sri-multi-warn">⚠ 동일 UDI · ${r.todayItems.length}개 업체 — 합계 ${totalBox}box 확인 필요</div>`
       : '';
-
-    // 다업체 경고 문구
-    const multiWarningHtml = isMulti
-      ? `<div class="sri-multi-warning">⚠ 동일 UDI · ${r.todayItems.length}개 업체 — 합계 ${totalBox}box 확인 필요</div>`
+    const companyListHtml = isMulti
+      ? `<div class="sri-company-list">${
+          r.todayItems.map(d =>
+            `<div class="sri-company-row">
+              <span class="sri-company-name">🏢 ${d.company}</span>
+              <span class="sri-company-box">${d.qty.toLocaleString()}ea · ${d.box}box</span>
+            </div>`
+          ).join('')
+        }</div>`
       : '';
 
     return `
@@ -1168,7 +1163,7 @@ function renderResultList() {
           <span>LOT: ${lot}</span>
           ${r.item ? `<span>합계 ${totalBox}box</span>` : ''}
         </div>
-        ${multiWarningHtml}
+        ${multiWarnHtml}
         ${companyListHtml}
         ${!isMulti && r.item && r.item.qty && r.item.box ? `
         <div class="sri-per-box">
