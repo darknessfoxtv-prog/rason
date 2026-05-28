@@ -788,6 +788,15 @@ function readExcel(file) {
   reader.readAsArrayBuffer(file);
 }
 
+// ── 수량/BOX 파싱 (엑셀 소수·수식·날짜숫자 오염 방지) ─────────
+function parseQty(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  // 엑셀 날짜 숫자 범위(40000~60000)면 수량이 아님 → 0
+  if (typeof v === 'number' && v > 1000 && v < 100000) return 0;
+  const n = Math.round(Number(v));
+  return isNaN(n) ? 0 : n;
+}
+
 // ── 날짜 파싱 ─────────────────────────────────────────────────
 function parseDate(v) {
   if (typeof v === 'number' && v > 40000 && v < 60000) {
@@ -851,7 +860,7 @@ function loadSheet() {
     if (lastDate && model && lot && udi && udi.includes('(01)')) {
       shipmentData.push({
         date: lastDate, company: lastCompany||'', product: lastProduct||'',
-        model, lot, udi, qty: parseInt(f)||0, box: parseInt(g)||0
+        model, lot, udi, qty: parseQty(f), box: parseQty(g)
       });
     }
   }
@@ -1034,11 +1043,16 @@ function processInput(raw) {
 
   // 스캐너 원시값 + 정규화값 표시
   document.getElementById('rawValueBox').style.display = 'block';
-  document.getElementById('rawValueText').innerHTML =
-    `<span style="color:var(--muted)">원시:</span> ${raw}<br>` +
-    `<span style="color:var(--muted)">정규:</span> <span style="color:var(--green)">${normalized}</span>`;
 
   const parsed = parseUDI(normalized);
+  const exactAllDbg = shipmentData.filter(d => normalizeRaw(d.udi) === normalized);
+  const dbgQty = exactAllDbg.map(d => `${d.company}: qty=${d.qty} box=${d.box}`).join(' | ');
+
+  document.getElementById('rawValueText').innerHTML =
+    `<span style="color:var(--muted)">원시:</span> ${raw}<br>` +
+    `<span style="color:var(--muted)">정규:</span> <span style="color:var(--green)">${normalized}</span>` +
+    (dbgQty ? `<br><span style="color:var(--muted)">수량:</span> <span style="color:#ffd166">${dbgQty}</span>` : '');
+
   const now = new Date();
   const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
