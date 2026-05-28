@@ -1040,8 +1040,6 @@ function processInput(raw) {
   const normalized = normalizeRaw(raw);
 
   // 스캐너 원시값 + 정규화값 표시
-  document.getElementById('rawValueBox').style.display = 'block';
-
   const parsed = parseUDI(normalized);
   const exactAllDbg = shipmentData.filter(d => normalizeRaw(d.udi) === normalized);
   const dbgQty = exactAllDbg.map(d => `${d.company}: qty=${d.qty} box=${d.box}`).join(' | ');
